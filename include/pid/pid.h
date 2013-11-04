@@ -28,9 +28,9 @@ namespace
 
 namespace pid
 {
-/// \class BezierCurve
-/// \brief Represents a curve
-///
+
+/// \struct pid
+/// \brief A pid controller using diagonal matrices for gain storage.
 template<typename Time=float, typename Numeric=Time, int Dim=5, typename Variable= Eigen::Matrix<Numeric, Dim, 1> >
 struct pid
 {
