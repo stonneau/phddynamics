@@ -88,9 +88,9 @@ struct pid
 
 /*Operations*/
 	///  \brief Evaluation of the cubic spline at time t.
-	///  \param t : time elapsed since last update
-	///  \param t : processValue current values for the variables
-	///  \param t : setPoint values we want the variables to reach
+	///  \param dt : time elapsed since last update
+	///  \param processValue : current values for the variables
+	///  \param setPoint : values we want the variables to reach
 	///  \param return : the new input for the Manipulated variable (MV)
 	virtual var_t operator()(time_t dt, const var_t& processValue, const var_t& setPoint)
 	{
