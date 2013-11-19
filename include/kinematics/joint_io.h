@@ -205,8 +205,8 @@ template<typename Numeric, typename Angle, int Dim, int MaxChildren, bool Safe>
 joint<Numeric, Angle, Dim, MaxChildren, Safe>* ReadTree(const std::string& filename)
 {
 	typedef joint<Numeric, Angle, Dim, MaxChildren, Safe> joint_t;
-	string line;
-	ifstream myfile (filename);
+	std::string line;
+	std::ifstream myfile (filename);
 	int rootId = -1; bool rootFound(false);
 	std::vector<joint_t> joints(100);
 	std::vector<std::vector<int>> children(100);
@@ -253,6 +253,7 @@ joint<Numeric, Angle, Dim, MaxChildren, Safe>* ReadTree(const std::string& filen
 	{
 		throw std::exception("wrong tree definition: No ROOT definition");
 	}
+	return 0;
 }
 
 }// end namespace kinematics
