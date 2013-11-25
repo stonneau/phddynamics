@@ -37,6 +37,7 @@ struct joint
 	, parent(0)
 	, constraintType(unknown)
 	{
+		tag[0] = '\0';
 		for(unsigned int i = 0; i < Dim; ++i)
 		{
 			minAngleValues[i] = -360;
@@ -97,6 +98,24 @@ struct joint
 		}
 		return res;
 	}
+	
+	///  \param return : true if the joint has 0 dofs
+	bool is_locked() const
+	{
+		bool res = true;
+		for(unsigned int i = 0; i < Dim && res; ++i)
+		{
+			res = minAngleValues[i] == maxAngleValues[i];
+		}
+		return res;
+	}
+
+	
+	///  \param return : true if the tree starting at this joint has only one effector
+	bool is_simple() const
+	{
+		return (nbChildren_ == 0) || (nbChildren_ == 1 && children[0]->is_simple());
+	}
 	/*Helpers*/
 	
 	/*Attributes*/
@@ -104,6 +123,7 @@ struct joint
 	Angle defaultAngleValues[Dim]; /*!< default angle values, in degrees [-360, 360], for joint along x, y, and z (if Dim = 3) axes */
 	Angle maxAngleValues[Dim]; /*!< maximum angle boundaries, in degrees [-360, 360], for joint along x, y, and z (if Dim = 3) axes */
 	Numeric offset[Dim]; /*!< vector indicating the direction and distance of the joint relative to its parent */
+	char tag[10];
 	joint* children[MaxChildren]; /*!< array indicating the current joint children */
 	unsigned int nbChildren_; /*!< number of children connected to the current joint */
 	joint* parent; /*!< pointer to eventual joint parent. Empty if joint is Root. */

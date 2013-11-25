@@ -86,7 +86,22 @@ void JointLoadTest(bool& error)
 		error = true;
 		std::cout << "In JointLoadTest: can not remove RobotLoad.txt."<< std::endl;
 	}
+	delete root;
 }
+
+void JointTagTest(bool& error)
+{
+	std::string targetFile("./tests/kinematics/io/RobotTag.txt");
+	joint_3_t* root = ReadTree<float, float, 3, 5, true>(targetFile);
+	std::string tag(root->tag);
+	if(tag != std::string("tagTest"))
+	{
+		error = true;
+		std::cout << "In JointTagTest: can not read expected tag 'tagTest' for root."<< std::endl;
+	}
+	delete root;
+}
+
 
 int main(int argc, char *argv[])
 {
@@ -95,6 +110,7 @@ int main(int argc, char *argv[])
 	JointCreationTest(error);
 	JointSaveTest(error);
 	JointLoadTest(error);
+	JointTagTest(error);
 	if(error)
 	{
 		std::cout << "There were some errors\n";

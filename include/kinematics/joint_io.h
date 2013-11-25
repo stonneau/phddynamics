@@ -127,7 +127,7 @@ void ReadJoint(std::ifstream& myfile, std::vector<T>& joints, std::vector<std::v
 	T res;
 	kinematics::constraint_type constraintType = kinematics::unknown;
 	std::string line;
-	bool offset(false), minAngle(false), maxAngle(false), defaultAngle(false), parent(isRoot), type(false);
+	bool offset(false), minAngle(false), maxAngle(false), defaultAngle(false), parent(isRoot), type(false), tag(false);
 	bool all(false);
 	while(myfile.good() &! all)
 	{
@@ -139,6 +139,14 @@ void ReadJoint(std::ifstream& myfile, std::vector<T>& joints, std::vector<std::v
 			char str[20];
 			int constraintType; sscanf(line.c_str(),"%s %d", str, &constraintType);
 			res.constraintType = (constraint_type)constraintType;
+		}
+		if(line.find("TAG") == 0)
+		{
+			if(tag && Safe) throw std::exception("wrong tree definition: attribute TYPE redefinition");
+			tag = true;
+			char str[10];
+			char tag[10]; sscanf(line.c_str(),"%s %s", str, tag);
+			strcpy(res.tag, tag);
 		}
 		if(line.find("PARENT") == 0)
 		{
