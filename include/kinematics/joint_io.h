@@ -174,7 +174,7 @@ void ReadJoint(std::ifstream& myfile, std::vector<T>& joints, std::vector<std::v
 		}
 		all = offset && minAngle && maxAngle && defaultAngle && parent;
 	}
-	if(all)
+	if((!isRoot && all) || (isRoot && offset))
 	{
 		joints[id] = res;
 	}

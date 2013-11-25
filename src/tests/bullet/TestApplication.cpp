@@ -314,7 +314,7 @@ void TestApplication::initPhysics()
 	spawnTestRig(startOffset, true);
 
 	//std::string targetFile("../../tests/bullet/RobotLoadComplex.txt");
-	std::string targetFile("../../tests/bullet/RobotLoadComplex.txt");
+	std::string targetFile("../../tests/bullet/RobotLoad.txt");
 	kinematics::bullet::joint_t* root = kinematics::ReadTree<btScalar, btScalar, 3, 5, false>(targetFile);
 	
 	kinematics::bullet::MakeBulletEntity(*root, m_dynamicsWorld);

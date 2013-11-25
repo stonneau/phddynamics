@@ -4,11 +4,7 @@ cmake_minimum_required(VERSION 2.6)
 include_directories("${PROJECT_SOURCE_DIR}/include"
 					"${BULLET_SOURCE_DIR}/../Demos/OpenGl"
 					"${BULLET_SOURCE_DIR}/../Glut")
-
-LINK_LIBRARIES(
-BulletDynamics  BulletCollision LinearMath    ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY}
-)
-					
+				
 add_executable(
         bullet_tests 
 		Main.cpp
@@ -16,27 +12,41 @@ add_executable(
 		TestApplication.cpp
 )
 
-IF (WIN32)
-	IF (NOT INTERNAL_CREATE_DISTRIBUTABLE_MSVC_PROJECTFILES)
-		IF (CMAKE_CL_64)
-			ADD_CUSTOM_COMMAND(
-				TARGET AppMotorDemo
-				POST_BUILD
-				COMMAND ${CMAKE_COMMAND} ARGS -E copy_if_different ${BULLET_PHYSICS_SOURCE_DIR}/glut64.dll ${CMAKE_CURRENT_BINARY_DIR}
-			)
-		ELSE(CMAKE_CL_64)
-			ADD_CUSTOM_COMMAND(
-				TARGET AppMotorDemo
-				POST_BUILD
-				COMMAND ${CMAKE_COMMAND} ARGS -E copy_if_different ${BULLET_PHYSICS_SOURCE_DIR}/GLUT32.DLL ${CMAKE_CURRENT_BINARY_DIR}
-			)
-		ENDIF(CMAKE_CL_64)
-	ENDIF (NOT INTERNAL_CREATE_DISTRIBUTABLE_MSVC_PROJECTFILES)
-ENDIF(WIN32)
+if(MSVC10)
+IF(CMAKE_CFG_INTDIR MATCHES "Debug")
+target_link_libraries(
+	bullet_tests 
+	BulletDynamics_vs2010_x64_debug  
+	BulletCollision_vs2010_x64_debug 
+	LinearMath_vs2010_x64_debug  
+	OpenGLSupport_vs2010_x64_debug  
+	${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY})
+ELSE ()
+target_link_libraries(
+	bullet_tests 
+	BulletDynamics_vs2010_x64_release  
+	BulletCollision_vs2010_x64_release
+	LinearMath_vs2010_x64_release  
+	OpenGLSupport_vs2010_x64_release  
+	${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY})
+ENDIF(CMAKE_CFG_INTDIR MATCHES "Debug")
+endif()
 
+if(MSVC)
+  # StringPooling: true == /GF  false == /GF-
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /GF")
 
-IF (INTERNAL_ADD_POSTFIX_EXECUTABLE_NAMES)
-			SET_TARGET_PROPERTIES(AppMotorDemo PROPERTIES  DEBUG_POSTFIX "_Debug")
-			SET_TARGET_PROPERTIES(AppMotorDemo PROPERTIES  MINSIZEREL_POSTFIX "_MinsizeRel")
-			SET_TARGET_PROPERTIES(AppMotorDemo PROPERTIES  RELWITHDEBINFO_POSTFIX "_RelWithDebugInfo")
-ENDIF(INTERNAL_ADD_POSTFIX_EXECUTABLE_NAMES)
+  # RuntimeLibrary
+  # 0 (MultiThreaded) == /MT
+  # 1 (MultiThreadedDebug) == /MTd
+  # 2 (MultiThreadedDLL) == /MD
+  # 3 (MultiThreadedDebugDLL) == /MDd
+  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
+
+  # TreatWChar_tAsBuiltInType: true == /Zc:wchar_t  false == /Zc:wchar_t-
+  # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zc:wchar_t")
+
+  # WarningLevel: /W<level 0 to 4> or /Wall
+  # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W3")
+endif()

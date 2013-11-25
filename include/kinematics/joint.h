@@ -19,6 +19,7 @@ enum constraint_type
 	point,
 	cone,
 	effector,
+	constrainedPoint,
 	unknown
 };
 
