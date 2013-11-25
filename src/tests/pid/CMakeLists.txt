@@ -4,5 +4,6 @@ include_directories("${PROJECT_SOURCE_DIR}/include")
 
 add_executable(
         pid_tests Main.cpp
+		${PROJECT_SOURCE_DIR}/include/pid/pid.h
 )
 
