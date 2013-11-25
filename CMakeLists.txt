@@ -19,6 +19,7 @@ set(BULLETLIBS "${BULLET_LIBRARIES}")
 LINK_DIRECTORIES("${BULLET_SOURCE_DIR}/../Glut"
 				 "${BULLET_SOURCE_DIR}/../lib")
 
+add_subdirectory (src/bullet_integration)
 add_subdirectory (src/tests/pid)
 add_subdirectory (src/tests/kinematics)
 add_subdirectory (src/tests/bullet)

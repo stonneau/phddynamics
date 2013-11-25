@@ -16,6 +16,7 @@ if(MSVC10)
 IF(CMAKE_CFG_INTDIR MATCHES "Debug")
 target_link_libraries(
 	bullet_tests 
+	bullet_integration
 	BulletDynamics_vs2010_x64_debug  
 	BulletCollision_vs2010_x64_debug 
 	LinearMath_vs2010_x64_debug  
@@ -23,7 +24,8 @@ target_link_libraries(
 	${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY})
 ELSE ()
 target_link_libraries(
-	bullet_tests 
+	bullet_tests
+	bullet_integration
 	BulletDynamics_vs2010_x64_release  
 	BulletCollision_vs2010_x64_release
 	LinearMath_vs2010_x64_release  

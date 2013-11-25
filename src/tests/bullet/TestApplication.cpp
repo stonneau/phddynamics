@@ -22,7 +22,7 @@ subject to the following restrictions:
 
 #include "GLDebugDrawer.h"
 #include "TestApplication.h"
-#include "bullet/joint_bullet.h"
+#include "bullet/BulletCreature.h"
 
 
 #ifndef M_PI
@@ -315,9 +315,9 @@ void TestApplication::initPhysics()
 
 	//std::string targetFile("../../tests/bullet/RobotLoadComplex.txt");
 	std::string targetFile("../../tests/bullet/RobotLoad.txt");
-	kinematics::bullet::joint_t* root = kinematics::ReadTree<btScalar, btScalar, 3, 5, false>(targetFile);
+	kinematics::bullet::joint_def_t* root = kinematics::ReadTree<btScalar, btScalar, 3, 5, false>(targetFile);
 	
-	kinematics::bullet::MakeBulletEntity(*root, m_dynamicsWorld);
+	kinematics::bullet::BulletCreature* creature = new kinematics::bullet::BulletCreature(*root,m_dynamicsWorld) ;
 
 	clientResetScene();		
 	m_dynamicsWorld->setDebugDrawer(&gDebugDrawer);

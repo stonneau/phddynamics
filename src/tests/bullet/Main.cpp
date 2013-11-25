@@ -1,5 +1,4 @@
 
-#include "bullet/joint_bullet.h"
 #include <iostream>
 
 namespace kinematics
@@ -8,7 +7,6 @@ namespace kinematics
 }
 
 using namespace std;
-using namespace kinematics::bullet;
 
 //int main(int argc, char *argv[])
 //{

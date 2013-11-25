@@ -83,6 +83,21 @@ struct joint
 		}
 	}
 	/*Operations*/
+
+	/*Helpers*/
+	///  \brief Counts the number of nodes composing the tree consisting in the
+	/// current joint and its sons.
+	///  \param return : the number of nodes
+	unsigned int count() const
+	{
+		int res = 1;
+		for(unsigned int i = 0; i < nbChildren_; ++i)
+		{
+			res += children[i]->count();
+		}
+		return res;
+	}
+	/*Helpers*/
 	
 	/*Attributes*/
 	Angle minAngleValues[Dim]; /*!< minimum angle boundaries, in degrees [-360, 360], for joint along x, y, and z (if Dim = 3) axes */
@@ -90,7 +105,7 @@ struct joint
 	Angle maxAngleValues[Dim]; /*!< maximum angle boundaries, in degrees [-360, 360], for joint along x, y, and z (if Dim = 3) axes */
 	Numeric offset[Dim]; /*!< vector indicating the direction and distance of the joint relative to its parent */
 	joint* children[MaxChildren]; /*!< array indicating the current joint children */
-	int nbChildren_; /*!< number of children connected to the current joint */
+	unsigned int nbChildren_; /*!< number of children connected to the current joint */
 	joint* parent; /*!< pointer to eventual joint parent. Empty if joint is Root. */
 	constraint_type constraintType;
 	/*Attributes*/

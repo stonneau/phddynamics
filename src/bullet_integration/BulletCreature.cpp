@@ -1,31 +1,12 @@
-/**
-* \file joint_bullet.h
-* \brief functions to create Bullet entities from a kinematic chain made of joints.
-* \author Steve T.
-* \version 0.1
-* \date 11/05/2013
-*
-*/
+#include "bullet/BulletCreature.h"
+
+using namespace kinematics;
+using namespace kinematics::bullet;
 
 
-#ifndef _JOINT_BULLET
-#define _JOINT_BULLET
-
-#define _USE_MATH_DEFINES
-#include <iostream>
-
-#include "btBulletDynamicsCommon.h"
-#include "kinematics/joint.h"
-#include "mathDefs.h"
-
-namespace kinematics
+namespace
 {
-namespace bullet
-{
-	
-	typedef kinematics::joint<btScalar, btScalar, 3, 5, false> joint_t;	// Joint model used for bullet simulation
-
-	inline btRigidBody* localCreateRigidBody (btDynamicsWorld* m_ownerWorld, btScalar mass, const btTransform& startTransform, btCollisionShape* shape)
+	btRigidBody* localCreateRigidBody (btDynamicsWorld* m_ownerWorld, btScalar mass, const btTransform& startTransform, btCollisionShape* shape)
 	{
 		btVector3 localInertia(0,0,0);
 		if (mass != 0.f) // is dynamic
@@ -40,29 +21,21 @@ namespace bullet
 		return body;
 	}
 
-	inline void BuildOneJoint(btTransform currentTransform, const btVector3& origin, const joint_t& joint, btDynamicsWorld* m_ownerWorld, btCollisionShape** m_shapes, btRigidBody** m_bodies, btTypedConstraint** m_joints, unsigned int& id, int parentId)
+	void BuildOneJoint(const btTransform& currentTransform, const btVector3& origin, const joint_def_t& joint, btDynamicsWorld* m_ownerWorld, btCollisionShape** m_shapes, btRigidBody** m_bodies, btTypedConstraint** m_joints, unsigned int& id, int parentId)
 	{
 		const btVector3 vUp(0,1,0);
 		const btVector3 vForward(1,0,0);
 		const btVector3 vBack(0,0,1);
-		// to local coordinates
-		btTransform inverse = currentTransform.inverse();
-		std::cout << "transform \n" << std::endl;
-		std::cout << (currentTransform.getRotation()).getAngle() << "\n" << std::endl;
-		std::cout << (currentTransform.getRotation()).getAxis()[0] << "\n" << std::endl;
-		std::cout << (currentTransform.getRotation()).getAxis()[1] << "\n" << std::endl;
-		std::cout << (currentTransform.getRotation()).getAxis()[2] << "\n" << std::endl;
-		std::cout << "transform \n" << std::endl;
 
 		// TODO parametrize capsule radius
 		btVector3 offSetVector(btScalar(joint.offset[0]), btScalar(joint.offset[1]),  btScalar(joint.offset[2]));
 		btVector3 parentOffset;
-		btScalar radius = offSetVector.length() * 0.1;
+		btScalar radius = offSetVector.length() * btScalar(0.1);
 		btScalar length = offSetVector.length() - 2 * radius;
 		if(parentId == 0)
 		{
 			btVector3 rootOffSet(offSetVector); rootOffSet.normalize();
-			parentOffset = rootOffSet * 0.05;
+			parentOffset = rootOffSet * btScalar(0.05);
 			offSetVector += parentOffset;
 		}
 		else
@@ -71,7 +44,7 @@ namespace bullet
 		}
 		// Setup the geometry
 		//The total height of a btCapsuleShape is height+2*radius
-		m_shapes[id] = new btCapsuleShapeX(radius, length - 0.1);
+		m_shapes[id] = new btCapsuleShapeX(radius, length - btScalar(0.1));
 		
 		// Setup the rigid body
 		btTransform offset;
@@ -170,27 +143,17 @@ namespace bullet
 
 		btVector3 newOrigin(origin + offSetVector);
 
-		
-		currentTransform = currentTransform * offset;
-		std::cout << "NNNNtransform \n" << std::endl;
-		std::cout << (currentTransform.getRotation()).getAngle() << "\n" << std::endl;
-		std::cout << (currentTransform.getRotation()).getAxis()[0] << "\n" << std::endl;
-		std::cout << (currentTransform.getRotation()).getAxis()[1] << "\n" << std::endl;
-		std::cout << (currentTransform.getRotation()).getAxis()[2] << "\n" << std::endl;
-		std::cout << (currentTransform * btVector3(0,0,0))[0]<< "\n" << std::endl;
-		std::cout << (currentTransform * btVector3(0,0,0))[1]<< "\n" << std::endl;
-		std::cout << (currentTransform * btVector3(0,0,0))[2]<< "\n" << std::endl;
-		std::cout << "NNNtransform \n" << std::endl;
-		currentTransform.setOrigin(newOrigin);
+		btTransform newTransform = currentTransform * offset;
+		newTransform.setOrigin(newOrigin);
 		int newParentId = id;
-		for(int i=0; i< joint.nbChildren_; ++i)
+		for(unsigned int i=0; i< joint.nbChildren_; ++i)
 		{
-  			BuildOneJoint(currentTransform, newOrigin, *(joint.children[i]), m_ownerWorld, m_shapes, m_bodies, m_joints, ++id, newParentId);
+  			BuildOneJoint(newTransform, newOrigin, *(joint.children[i]), m_ownerWorld, m_shapes, m_bodies, m_joints, ++id, newParentId);
 		}
 	}
 	
 	
-	inline void BuildRootJoint(const btVector3& origin, const joint_t& joint, btDynamicsWorld* m_ownerWorld, btCollisionShape** m_shapes, btRigidBody** m_bodies, btTypedConstraint** m_joints)
+	void BuildRootJoint(const btVector3& origin, const joint_def_t& joint, btDynamicsWorld* m_ownerWorld, btCollisionShape** m_shapes, btRigidBody** m_bodies, btTypedConstraint** m_joints)
 	{
 		btVector3 newOrigin(origin[0] + joint.offset[0], origin[1] + joint.offset[1], origin[2] + joint.offset[2]);
 		// creating a small shape on which sons will be attached.
@@ -198,28 +161,42 @@ namespace bullet
 		btTransform offset;
 		offset.setIdentity();
 		offset.setOrigin(newOrigin);
-		m_shapes[0] = new btSphereShape(0.1);
+		m_shapes[0] = new btSphereShape(btScalar(0.1));
 		m_bodies[0] = localCreateRigidBody(m_ownerWorld, btScalar(0), offset, m_shapes[0]);
-		for(int i=0; i< joint.nbChildren_; ++i)
+		for(unsigned int i=0; i< joint.nbChildren_; ++i)
 		{
   			BuildOneJoint(offset, newOrigin, *(joint.children[i]), m_ownerWorld, m_shapes, m_bodies, m_joints, ++id, 0);
 		}
 	}
+}
 
-	///  \brief Creates a bullet entity given a joint description
-	///	 If Safe is set to true, an exception will be thrown if it is not possible to create the file.
-	///  \param joint the root joint of the kinematic tree to convert
-	///  \return a bullet entity
-	inline bool MakeBulletEntity(const joint_t& joint, btDynamicsWorld* m_ownerWorld)
-	{
+BulletCreature::BulletCreature(const joint_def_t& jointDef, btDynamicsWorld* m_ownerWorld)
+	: nbBodies_(jointDef.count())
+	, m_ownerWorld_(m_ownerWorld)
+{
 		btVector3 origin(0,0,0);
+		BuildRootJoint(origin, jointDef, m_ownerWorld_, m_shapes_, m_bodies_, m_joints_);
+}
 
-		btCollisionShape* m_shapes[100];
-		btRigidBody* m_bodies[100];
-		btTypedConstraint* m_joints[100];
-		BuildRootJoint(origin, joint, m_ownerWorld, m_shapes, m_bodies, m_joints);
-		return false;
+BulletCreature::~BulletCreature()
+{
+	int i;
+	// Remove all constraints
+	for ( i = 0; i < nbBodies_; ++i)
+	{
+		m_ownerWorld_->removeConstraint(m_joints_[i]);
+		delete m_joints_[i]; m_joints_[i] = 0;
 	}
-} // namespace bullet
-} // namespace kinematics
-#endif //_JOINT_BULLET
+
+	// Remove all bodies and shapes
+	for ( i = 0; i < nbBodies_; ++i)
+	{
+		m_ownerWorld_->removeRigidBody(m_bodies_[i]);
+			
+		delete m_bodies_[i]->getMotionState();
+		delete m_bodies_[i]; m_bodies_[i] = 0;
+		delete m_shapes_[i]; m_shapes_[i] = 0;
+	}
+}
+
+
