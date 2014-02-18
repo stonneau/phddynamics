@@ -53,23 +53,23 @@ namespace
 		
 		btVector3 vToBone(offSetVector);
 		vToBone.normalize();
-		btVector3 vAxis = vForward.cross(vToBone);
+		btVector3 vAxis = vToBone.cross(vForward);
 		btScalar dot = vToBone.dot(vForward);
 		btScalar angle = acos(vToBone.dot(vForward));
 		if(vAxis.z() < 0)
 		{
-			angle = - angle;
+			//angle = - angle;
 		}
 		if(angle != 0)
 		{
-			if(angle == acos(btScalar(-1)))
+			/*if(angle == acos(btScalar(-1)))
 			{
 				offset.setRotation(btQuaternion(vUp, angle));
 			}
 			else
-			{
+			{*/
 				offset.setRotation(btQuaternion(vBack, angle));
-			}
+			//}
 		}
 
 		m_bodies[id] = localCreateRigidBody(m_ownerWorld, btScalar(1.), offset, m_shapes[id]);
@@ -93,35 +93,31 @@ namespace
 			}
 			case kinematics::constrainedPoint:
 			{
-				btGeneric6DofConstraint* coneC;
+				btGeneric6DofConstraint* constraint;
+
 				btTransform localA; localA.setIdentity();
-				btScalar yaw, pitch, roll; offset.getBasis().getEulerZYX(yaw, pitch, roll);
-				//localA.getBasis().setEulerZYX(yaw, pitch, roll);
 				localA.setOrigin(btVector3(parentOffset.length() / 2, btScalar(0.), btScalar(0.)));
-				localA.setRotation(currentTransform.getRotation().inverse());
-				//localA.setOrigin(btVector3(0.5, btScalar(0.), btScalar(0.)));
-				//localA.getBasis().setEulerZYX(0,0,angle);
+
 				btTransform localB; localB.setIdentity();
-				//localB.getBasis().setEulerZYX(0,0,angle);
-				//localB.getBasis().setEulerZYX(yaw, pitch, roll);
-				//localB.setRotation(offset.getRotation());
-				//localB.setOrigin(btVector3(- offSetVector.length() / 2, btScalar(0.), btScalar(0.)));
-				localB.setRotation((offset.getRotation() * currentTransform.getRotation()).inverse());
+				//localB.setRotation(( offset.getRotation() * currentTransform.getRotation()));
 				localB.setOrigin(btVector3(-length / 2, btScalar(0.), btScalar(0.)));
-				coneC =  new btGeneric6DofConstraint(*m_bodies[parentId], *m_bodies[id], localA, localB, true);
-				//coneC =  new btGeneric6DofConstraint(*m_bodies[id], localB, true);
-				m_joints[id] = coneC;
-				coneC->setDbgDrawSize(0.5f);
+
+				constraint =  new btGeneric6DofConstraint(*m_bodies[parentId], *m_bodies[id], localA, localB, false);
+				m_joints[id] = constraint;
+				constraint->setDbgDrawSize(0.5f);
 				btVector3 limitsDown(btScalar(joint.minAngleValues[0] * DegreesToRadians), btScalar(joint.minAngleValues[1])  * DegreesToRadians, joint.minAngleValues[2] * DegreesToRadians);
 				btVector3 limitsUp(btScalar(joint.maxAngleValues[0] * DegreesToRadians), btScalar(joint.maxAngleValues[1])  * DegreesToRadians, joint.maxAngleValues[2] * DegreesToRadians);
-				coneC->setAngularLowerLimit(limitsDown);
-				coneC->setAngularUpperLimit(limitsUp);/*
-				coneC->setLinearLowerLimit(btVector3(0,0,0));
-				coneC->setLinearUpperLimit(btVector3(0,0,0));*/
+				constraint->setAngularLowerLimit(limitsDown);
+				constraint->setAngularUpperLimit(limitsUp);
 
 				m_ownerWorld->addConstraint(m_joints[id], true);
 				break;
 			}
+			//localA.setRotation(offset.getRotation() * currentTransform.getRotation());
+				//localA.setRotation((offset.getRotation()).inverse());
+			/*
+				coneC->setLinearLowerLimit(btVector3(0,0,0));
+				coneC->setLinearUpperLimit(btVector3(0,0,0));*/
 			default:
 			{
 				btHingeConstraint* hingeC;
@@ -130,8 +126,8 @@ namespace
 				btTransform localB; localB.setIdentity();
 				localB.setOrigin(btVector3(btScalar(0.), - offSetVector.length() / 2, btScalar(0.)));
 				hingeC =  new btHingeConstraint(*m_bodies[parentId], *m_bodies[id], localA, localB, true);
-				btVector3 limitsDown(btScalar(joint.minAngleValues[0] * DegreesToRadians), btScalar(joint.minAngleValues[1])  * DegreesToRadians, joint.minAngleValues[2] * DegreesToRadians);
-				btVector3 limitsUp(btScalar(joint.maxAngleValues[0] * DegreesToRadians), btScalar(joint.maxAngleValues[1])  * DegreesToRadians, joint.maxAngleValues[2] * DegreesToRadians);
+				btVector3 limitsDown(btScalar(joint.minAngleValues[0] * DegreesToRadians), btScalar(joint.minAngleValues[1])  * DegreesToRadians, joint.minAngleValues[2] * DegreesToRadians + Pi);
+				btVector3 limitsUp(btScalar(joint.maxAngleValues[0] * DegreesToRadians), btScalar(joint.maxAngleValues[1])  * DegreesToRadians, joint.maxAngleValues[2] * DegreesToRadians + Pi);
 					
 				hingeC->setLimit(limitsDown[0], limitsUp[0]);
 				m_joints[id] = hingeC;
@@ -143,7 +139,8 @@ namespace
 
 		btVector3 newOrigin(origin + offSetVector);
 
-		btTransform newTransform = currentTransform * offset;
+		btTransform newTransform; newTransform.setIdentity();
+		newTransform.setRotation(currentTransform.getRotation() * offset.getRotation());
 		newTransform.setOrigin(newOrigin);
 		int newParentId = id;
 		for(unsigned int i=0; i< joint.nbChildren_; ++i)
@@ -152,6 +149,139 @@ namespace
 		}
 	}
 	
+	void BuildOneJoint2(const btTransform& currentTransform, const btVector3& origin, const joint_def_t& joint, btDynamicsWorld* m_ownerWorld, btCollisionShape** m_shapes, btRigidBody** m_bodies, btTypedConstraint** m_joints, unsigned int& id, int parentId)
+	{
+		const btVector3 vUp(0,1,0);
+		const btVector3 vForward(1,0,0);
+		const btVector3 vBack(0,0,1);
+
+		// retrieving joint offset from parent
+		btVector3 offSetVector(btScalar(joint.offset[0]), btScalar(joint.offset[1]),  btScalar(joint.offset[2]));
+		btVector3 parentOffset;
+
+		//computing radius and length of capsule; radius is more or less equal to offset
+		btScalar radius = offSetVector.length() * btScalar(0.1); 
+		btScalar length = offSetVector.length() - 2 * radius;
+		if(parentId == 0)
+		{
+			// if current joint is root, for now juste create a small capsule representing root
+			btVector3 rootOffSet(offSetVector); rootOffSet.normalize();
+			parentOffset = rootOffSet * btScalar(0.05);
+			offSetVector += parentOffset;
+		}
+		else
+		{
+			parentOffset = btVector3(btScalar(joint.parent->offset[0]), btScalar(joint.parent->offset[1]),  btScalar(joint.parent->offset[2]));
+		}
+		// Setup the geometry
+		//The total height of a btCapsuleShape is height+2*radius
+		m_shapes[id] = new btCapsuleShapeX(radius, length - btScalar(0.1));
+		
+		// Setup the rigid body
+		btTransform offset;
+		offset.setIdentity();
+  		offset.setOrigin(origin + offSetVector / 2);
+		
+		// computing rotation necessary for capsule
+		btVector3 vToBone(offSetVector);
+		vToBone.normalize();
+		btVector3 vAxis = vToBone.cross(vForward);
+		btScalar dot = vToBone.dot(vForward);
+		btScalar angle = acos(vToBone.dot(vForward));
+		if(angle != 0)
+		{
+			offset.setRotation(btQuaternion(vBack, angle));
+		}
+
+		m_bodies[id] = localCreateRigidBody(m_ownerWorld, btScalar(1.), offset, m_shapes[id]);
+		
+		btVector3 newOrigin(origin + offSetVector);
+
+		btTransform newTransform; newTransform.setIdentity();
+		newTransform.setRotation(currentTransform.getRotation() * offset.getRotation());
+		newTransform.setOrigin(newOrigin);
+		int newParentId = id;
+		// method is recursive, call it with children
+		for(unsigned int i=0; i< joint.nbChildren_; ++i)
+		{
+  			BuildOneJoint2(newTransform, newOrigin, *(joint.children[i]), m_ownerWorld, m_shapes, m_bodies, m_joints, ++id, newParentId);
+		}
+	}
+
+	void BuildOneJoint3(const btTransform& currentTransform, const btVector3& origin, const joint_def_t& joint, btDynamicsWorld* m_ownerWorld, btCollisionShape** m_shapes, btRigidBody** m_bodies, btTypedConstraint** m_joints, unsigned int& id, int parentId)
+	{
+		const btVector3 vUp(0,1,0);
+		const btVector3 vForward(1,0,0);
+		const btVector3 vBack(0,0,1);
+
+		//
+		btVector3 offSetVector(btScalar(joint.offset[0]), btScalar(joint.offset[1]),  btScalar(joint.offset[2]));
+		btVector3 parentOffset;
+		btScalar radius = offSetVector.length() * btScalar(0.1);
+		btScalar length = offSetVector.length() - 2 * radius;
+		if(parentId == 0)
+		{
+			btVector3 rootOffSet(offSetVector); rootOffSet.normalize();
+			parentOffset = rootOffSet * btScalar(0.05);
+			offSetVector += parentOffset;
+		}
+		else
+		{
+			parentOffset = btVector3(btScalar(joint.parent->offset[0]), btScalar(joint.parent->offset[1]),  btScalar(joint.parent->offset[2]));
+		}
+		// Setup the geometry
+		//The total height of a btCapsuleShape is height+2*radius
+		m_shapes[id] = new btCapsuleShapeX(radius, length - btScalar(0.1));
+		
+		// Setup the rigid body
+		btTransform offset;
+		offset.setIdentity();
+  		offset.setOrigin(origin + offSetVector / 2);
+		
+		btVector3 vToBone(offSetVector);
+		vToBone.normalize();
+		btVector3 vAxis = vToBone.cross(vForward);
+		btScalar dot = vToBone.dot(vForward);
+		btScalar angle = acos(vToBone.dot(vForward));
+		if(angle != 0)
+		{
+			offset.setRotation(btQuaternion(vBack, angle));
+		}
+
+		m_bodies[id] = localCreateRigidBody(m_ownerWorld, btScalar(1.), offset, m_shapes[id]);
+		
+		// Now setup the constraints
+		btGeneric6DofConstraint* constraint;
+
+		btTransform localA; localA.setIdentity();
+		localA.setOrigin(btVector3(parentOffset.length() / 2, btScalar(0.), btScalar(0.)));
+
+		btTransform localB; localB.setIdentity();
+		localB.setRotation(( offset.getRotation() * currentTransform.getRotation()));
+		localB.setOrigin(btVector3(-length / 2, btScalar(0.), btScalar(0.)));
+
+		constraint =  new btGeneric6DofConstraint(*m_bodies[parentId], *m_bodies[id], localA, localB, false);
+		m_joints[id] = constraint;
+		constraint->setDbgDrawSize(0.5f);
+		btVector3 limitsDown(btScalar(joint.minAngleValues[0] * DegreesToRadians), btScalar(joint.minAngleValues[1])  * DegreesToRadians, joint.minAngleValues[2] * DegreesToRadians);
+		btVector3 limitsUp(btScalar(joint.maxAngleValues[0] * DegreesToRadians), btScalar(joint.maxAngleValues[1])  * DegreesToRadians, joint.maxAngleValues[2] * DegreesToRadians);
+		constraint->setAngularLowerLimit(limitsDown);
+		constraint->setAngularUpperLimit(limitsUp);
+		m_ownerWorld->addConstraint(m_joints[id], false); 
+
+
+		btVector3 newOrigin(origin + offSetVector);
+
+		btTransform newTransform; newTransform.setIdentity();
+		newTransform.setRotation(currentTransform.getRotation() * offset.getRotation());
+		newTransform.setOrigin(newOrigin);
+		int newParentId = id;
+		for(unsigned int i=0; i< joint.nbChildren_; ++i)
+		{
+  			BuildOneJoint3(newTransform, newOrigin, *(joint.children[i]), m_ownerWorld, m_shapes, m_bodies, m_joints, ++id, newParentId);
+		}
+	}
+
 	
 	void BuildRootJoint(const btVector3& origin, const joint_def_t& joint, btDynamicsWorld* m_ownerWorld, btCollisionShape** m_shapes, btRigidBody** m_bodies, btTypedConstraint** m_joints)
 	{
@@ -174,7 +304,7 @@ BulletCreature::BulletCreature(const joint_def_t& jointDef, btDynamicsWorld* m_o
 	: nbBodies_(jointDef.count())
 	, m_ownerWorld_(m_ownerWorld)
 {
-		btVector3 origin(0,0,0);
+		btVector3 origin(0,1,-2);
 		BuildRootJoint(origin, jointDef, m_ownerWorld_, m_shapes_, m_bodies_, m_joints_);
 }
 
